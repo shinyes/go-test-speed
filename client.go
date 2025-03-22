@@ -45,11 +45,11 @@ func main() {
         return
     }
 
-    // 打开 CSV 文件
+    // 打开 CSV 文件以追加模式
     var err error
-    logFile, err = os.Create("test_results.csv")
+    logFile, err = os.OpenFile("test_results.csv", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
     if err != nil {
-        fmt.Println("无法创建日志文件:", err)
+        fmt.Println("无法打开日志文件:", err)
         return
     }
     defer logFile.Close()
@@ -58,11 +58,14 @@ func main() {
     csvWriter = csv.NewWriter(logFile)
     defer csvWriter.Flush()
 
-    // 写入 CSV 标题
-    err = csvWriter.Write([]string{"Time", "Upload Speed (MB/s)", "Download Speed (MB/s)", "Min Latency (ms)", "Max Latency (ms)", "Avg Latency (ms)", "Min Jitter (ms)", "Max Jitter (ms)", "Avg Jitter (ms)"})
-    if err != nil {
-        fmt.Println("写入 CSV 标题失败:", err)
-        return
+    // 如果文件是新创建的，写入 CSV 标题
+    fileStat, _ := logFile.Stat()
+    if fileStat.Size() == 0 {
+        err = csvWriter.Write([]string{"时间", "上传速度(MB/s)", "下载速度(MB/s)", "最小延迟(ms)", "最大延迟(ms)", "平均延迟(ms)", "最小抖动(ms)", "最大抖动(ms)", "平均抖动(ms)"})
+        if err != nil {
+            fmt.Println("写入 CSV 标题失败:", err)
+            return
+        }
     }
 
     fmt.Printf("连接服务端: %s，线程数: %d\n", serverAddr, threadCount)
